@@ -14,11 +14,10 @@
 
 		[SectorIndexTable]
 		UINT32[]	lookupIndex			table of indices for lookup of each sector. To calculate number of entries in this array: sectorCount = (uncompressedSize+sectorSize-1)/sectorSize
-		
+
 		[SectorData]
 		UINT8[]		padding				Padding until the next field (sectorData) is aligned to sectorSize bytes. You can write whatever data you want here
 		UINT8[]		sectorData			Array of unique sectors. Size in bytes: sectorSize * sectorCount
-		
  */
 
 
@@ -76,8 +75,8 @@ bool validateWUX(char* wud1Path, char* wud2Path)
 	// compare data
 	long long currentValidationOffset = 0;
 	unsigned int tempBufferSize = 1024*1024+19; // 1MB + some extra bytes to make the number uneven (we want to provoke cross-sector reads)
-	unsigned char* tempBufferWUD1 = (unsigned char*)malloc(tempBufferSize); 
-	unsigned char* tempBufferWUD2 = (unsigned char*)malloc(tempBufferSize); 
+	unsigned char* tempBufferWUD1 = (unsigned char*)malloc(tempBufferSize);
+	unsigned char* tempBufferWUD2 = (unsigned char*)malloc(tempBufferSize);
 	bool dataMismatch = false;
 	int pct = -1;
 	printf("0%\r");
@@ -135,13 +134,13 @@ bool compressWUD(wud_t* inputFile, FILE* outputFile, char* outputPath)
 	unsigned int sectorTableEntryCount = (unsigned int)((inputSize+SECTOR_SIZE-1) / (long long)SECTOR_SIZE);
 
 	// remember current seek offset, this is where the index table will be written after compression is done
-	long long offsetIndexTable = _ftelli64(outputFile);
+	long long offsetIndexTable = ftello64(outputFile);
 	// skip index table and padding
 	long long offsetSectorArrayStart = (offsetIndexTable + (long long)sectorTableEntryCount*sizeof(unsigned int));
 	// align to SECTOR_SIZE
 	offsetSectorArrayStart = (offsetSectorArrayStart + SECTOR_SIZE - 1);
 	offsetSectorArrayStart = offsetSectorArrayStart - (offsetSectorArrayStart%SECTOR_SIZE);
-	_fseeki64(outputFile, offsetSectorArrayStart, SEEK_SET);
+	fseeko64(outputFile, offsetSectorArrayStart, SEEK_SET);
 
 	unsigned int indexTableSize = sizeof(unsigned int) * sectorTableEntryCount;
 	unsigned int* sectorIndexTable = (unsigned int*)malloc(sizeof(unsigned int) * sectorTableEntryCount);
@@ -191,7 +190,7 @@ bool compressWUD(wud_t* inputFile, FILE* outputFile, char* outputPath)
 		storedSectors++;
 	}
 	printf("100%%   \n");
-	_fseeki64(outputFile, offsetIndexTable, SEEK_SET);
+	fseeko64(outputFile, offsetIndexTable, SEEK_SET);
 	fwrite(sectorIndexTable, sectorTableEntryCount, sizeof(unsigned int), outputFile);
 	fclose(outputFile);
 	puts("done");
@@ -249,7 +248,7 @@ int main(int argc, char *argv[])
 	bool skipVerify = false;
 	for(int i=2; i<argc; i++)
 	{
-		if( stricmp(argv[i], "-noverify") == 0 )
+		if( strcasecmp(argv[i], "-noverify") == 0 )
 		{
 			skipVerify = true;
 		}
@@ -275,17 +274,17 @@ int main(int argc, char *argv[])
 	// create path of output file by replacing the extension with .wux
 	char* outputPath = (char*)malloc(strlen(wudPath)+4+1); // allocate space for up to 4 extra characters in case we need to add the .wux extension
 	strcpy(outputPath, wudPath);
-	// replace with opposite extension (wux <-> wud) 
-	char* newExtension;
+	// replace with opposite extension (wux <-> wud)
+	char newExtension[5] = {0};
 	if( wud_isWUXCompressed(wud) )
 	{
 		printf("Mode: Decompress\n");
-		newExtension = ".wud";
+		snprintf(newExtension, sizeof(newExtension), ".wud");
 	}
 	else
 	{
 		printf("Mode: Compress\n");
-		newExtension = ".wux";
+		snprintf(newExtension, sizeof(newExtension), ".wux");
 	}
 	bool extensionFound = false;
 	for(int i=strlen(outputPath)-1; i>=0; i--)

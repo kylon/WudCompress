@@ -20,7 +20,7 @@ typedef struct
 	long long		offsetSectorArray;
 }wud_t;
 
-#define WUX_MAGIC_0	'0XUW' // "WUX0"
+#define WUX_MAGIC_0	0x30585557 // "WUX0"
 #define WUX_MAGIC_1	0x1099d02e
 
 // wud and wux functions
